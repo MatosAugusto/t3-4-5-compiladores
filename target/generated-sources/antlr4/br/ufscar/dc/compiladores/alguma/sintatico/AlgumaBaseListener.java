@@ -1,4 +1,4 @@
-// Generated from java-escape by ANTLR 4.11.1
+// Generated from br\u005Cufscar\dc\compiladores\alguma\sintatico\Alguma.g4 by ANTLR 4.7.2
 package br.ufscar.dc.compiladores.alguma.sintatico;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -10,7 +10,6 @@ import org.antlr.v4.runtime.tree.TerminalNode;
  * which can be extended to create a listener which only needs to handle a subset
  * of the available methods.
  */
-@SuppressWarnings("CheckReturnValue")
 public class AlgumaBaseListener implements AlgumaListener {
 	/**
 	 * {@inheritDoc}

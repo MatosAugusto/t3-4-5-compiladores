@@ -1,11 +1,11 @@
 grammar Alguma;
 
 
-PALAVRAS_CHAVE  : 'algoritmo' | 'fim_algoritmo' | 'declare' | 'constante' | 'tipo' | 'literal' 
+PALAVRAS_CHAVE  : 'algoritmo' | 'fim_algoritmo' | 'declare' | 'constante' | 'tipo' | 'literal'
                 | 'inteiro' | 'real' | 'logico'	| 'verdadeiro' | 'falso' | 'registro' | 'fim_registro'
-		| 'funcao' | 'fim_funcao' | 'var' | 'leia' | 'escreva'	| 'se' | 'entao' | 'senao' 
+		| 'funcao' | 'fim_funcao' | 'var' | 'leia' | 'escreva'	| 'se' | 'entao' | 'senao'
                 | 'fim_se' | 'caso' | 'seja' | 'fim_caso' | 'para' | 'ate' | 'faca' | 'fim_para'
-		| 'enquanto' | 'fim_enquanto' | 'retorne' |  'procedimento'| 'fim_procedimento'; 
+		| 'enquanto' | 'fim_enquanto' | 'retorne' |  'procedimento'| 'fim_procedimento';
 
 
 OP_LOGICO : 'e' | 'ou' | 'nao';
@@ -47,11 +47,11 @@ programa: declaracoes 'algoritmo' corpo 'fim_algoritmo' EOF;
 
 declaracoes: decl_local_global*;
 
-decl_local_global: declaracao_local 
+decl_local_global: declaracao_local
                    | declaracao_global;
 
-declaracao_local: 'declare' variavel 
-                  | 'constante' IDENT ':' tipo_basico '=' valor_constante 
+declaracao_local: 'declare' variavel
+                  | 'constante' IDENT ':' tipo_basico '=' valor_constante
                   | 'tipo' IDENT ':' tipo;
 
 variavel: identificador (',' identificador)* ':' tipo;
@@ -61,23 +61,23 @@ identificador: IDENT ('.' IDENT)* dimensao;
 dimensao: ('[' exp_aritmetica ']')*;
 
 
-tipo: registro 
+tipo: registro
       | tipo_estendido;
 
-tipo_basico: 'literal' 
-             | 'inteiro' 
-             | 'real' 
+tipo_basico: 'literal'
+             | 'inteiro'
+             | 'real'
              | 'logico';
 
-tipo_basico_ident: tipo_basico 
+tipo_basico_ident: tipo_basico
                    | IDENT;
 
 tipo_estendido: '^'? tipo_basico_ident;
 
-valor_constante: CADEIA 
-                | NUM_INT 
-                | NUM_REAL 
-                | 'verdadeiro' 
+valor_constante: CADEIA
+                | NUM_INT
+                | NUM_REAL
+                | 'verdadeiro'
                 | 'falso';
 
 registro: 'registro' variavel* 'fim_registro';
@@ -91,26 +91,26 @@ parametros: parametro (',' parametro)*;
 corpo: declaracao_local* cmd*;
 
 
-cmd: cmdLeia 
-| cmdEscreva 
-| cmdSe 
-| cmdCaso 
-| cmdPara 
-| cmdEnquanto 
-| cmdFaca 
-| cmdAtribuicao 
-| cmdChamada 
+cmd: cmdLeia
+| cmdEscreva
+| cmdSe
+| cmdCaso
+| cmdPara
+| cmdEnquanto
+| cmdFaca
+| cmdAtribuicao
+| cmdChamada
 | cmdRetorne;
 
 cmdLeia: 'leia' '(' '^'? identificador (',' '^'? identificador)* ')';
 
 cmdEscreva: 'escreva' '(' expressao (',' expressao)* ')';
 
-cmdSe: 'se' expressao 'entao' cmd* ('senao' cmd*)? 'fim_se';
+cmdSe: 'se' expressao 'entao' (cmd1+=cmd)* ('senao' (cmd2+=cmd)*)? 'fim_se';
 
 cmdCaso: 'caso' exp_aritmetica 'seja' selecao ('senao' cmd*)? 'fim_caso';
 
-cmdPara: 'para' IDENT '<-' exp_aritmetica 'ate' exp_aritmetica 'faca' cmd* 'fim_para';
+cmdPara:'para' IDENT '<-' a=exp_aritmetica 'ate' b=exp_aritmetica 'faca' (cmd)* 'fim_para';
 
 cmdEnquanto: 'enquanto' expressao 'faca' cmd* 'fim_enquanto';
 
@@ -129,7 +129,7 @@ item_selecao: constantes ':' cmd*;
 
 constantes: numero_intervalo (',' numero_intervalo)*;
 
-numero_intervalo: op_unario? NUM_INT ('..' op_unario? NUM_INT)?;
+numero_intervalo:(opu1=op_unario)? NUM_INT ('..' (opu2=op_unario)? NUM_INT)?;
 
 op_unario: '-';
 
@@ -140,34 +140,34 @@ termo: fator (op2 fator)*;
 fator: parcela (op3 parcela)*;
 
 
-op1: '+' 
+op1: '+'
      | '-';
-op2: '*' 
+op2: '*'
      | '/';
 op3: '%';
 
-parcela: op_unario? 
-         parcela_unario 
+parcela: op_unario?
+         parcela_unario
         | parcela_nao_unario;
 
 
-parcela_unario: '^'? identificador 
-                | IDENT '(' expressao (',' expressao)* ')' 
-                | NUM_INT 
-                | NUM_REAL 
+parcela_unario: '^'? identificador
+                | IDENT '(' expressao (',' expressao)* ')'
+                | NUM_INT
+                | NUM_REAL
                 | '(' expressao ')';
 
 
-parcela_nao_unario: '&' identificador 
+parcela_nao_unario: '&' identificador
                     | CADEIA;
 
 exp_relacional: exp_aritmetica (op_relacional exp_aritmetica)?;
 
-op_relacional: '=' 
-               | '<>' 
-               | '>=' 
-               | '<=' 
-               | '>' 
+op_relacional: '='
+               | '<>'
+               | '>='
+               | '<='
+               | '>'
                | '<';
 
 expressao: termo_logico (op_logico_1 termo_logico)*;

@@ -1,4 +1,4 @@
-// Generated from java-escape by ANTLR 4.11.1
+// Generated from br\u005Cufscar\dc\compiladores\alguma\sintatico\Alguma.g4 by ANTLR 4.7.2
 package br.ufscar.dc.compiladores.alguma.sintatico;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
@@ -10,7 +10,6 @@ import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
  * @param <T> The return type of the visit operation. Use {@link Void} for
  * operations with no return type.
  */
-@SuppressWarnings("CheckReturnValue")
 public class AlgumaBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements AlgumaVisitor<T> {
 	/**
 	 * {@inheritDoc}

@@ -1,9 +1,10 @@
 package br.ufscar.dc.compiladores.alguma.sintatico;
 
 import org.antlr.v4.runtime.BaseErrorListener;
-import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
+// Outros imports vão ser necessários aqui. O NetBeans ou IntelliJ fazem isso automaticamente
+import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 
@@ -13,33 +14,33 @@ public class MyCustomErrorListener extends BaseErrorListener {
 
     @Override
     public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
-            int charPositionInLine, String msg, RecognitionException e)
-                throws ParseCancellationException{
+                            int charPositionInLine, String msg, RecognitionException e)
+            throws ParseCancellationException{
 
         Token token = (Token) offendingSymbol;
 
-
-        if(checkError(token.getType())) {
+        String base = "Linha " + token.getLine() + ": ";
+        if(isError(token.getType())) {
             if (token.getType() == AlgumaLexer.Caracter_invalido) {
-                throw new ParseCancellationException("Linha " + token.getLine() + ": " + token.getText() + " - simbolo nao identificado");
+                throw new ParseCancellationException(base + token.getText() + " - simbolo nao identificado");
             }
             else if(AlgumaLexer.VOCABULARY.getSymbolicName(token.getType()).equals("CADEIA_SEM_FIM"))
             {
-                throw new ParseCancellationException("Linha " + token.getLine() + ": " + "cadeia literal nao fechada");
+                throw new ParseCancellationException(base + "cadeia literal nao fechada");
             }
             else {
-                throw new ParseCancellationException("Linha " + token.getLine() + ": " + "comentario nao fechado");
+                throw new ParseCancellationException(base + "comentario nao fechado");
             }
 
         }
-        else if (token.getType() == Token.EOF)// Checa erros nao-lexicos (sintaticos ou EOF)
-                throw new ParseCancellationException("Linha " + token.getLine() + ": " + "erro sintatico proximo a EOF");
+        else if (token.getType() == Token.EOF)
+            throw new ParseCancellationException(base + "erro sintatico proximo a EOF");
         else
-                throw new ParseCancellationException("Linha " + token.getLine() + ": " + "erro sintatico proximo a " + token.getText());
-        }
+            throw new ParseCancellationException(base + "erro sintatico proximo a " + token.getText());
+    }
 
-    private static Boolean checkError(int tokenType) {
-        return tokenType == AlgumaLexer.CADEIA_SEM_FIM || tokenType == AlgumaLexer.COMENTARIO_SEM_FIM
-                        || tokenType == AlgumaLexer.Caracter_invalido;
+    private static Boolean isError(int tkType) {
+        return tkType == AlgumaLexer.CADEIA_SEM_FIM || tkType == AlgumaLexer.COMENTARIO_SEM_FIM
+                || tkType == AlgumaLexer.Caracter_invalido;
     }
 }

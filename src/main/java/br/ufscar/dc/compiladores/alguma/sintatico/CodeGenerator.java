@@ -1,28 +1,28 @@
 package br.ufscar.dc.compiladores.alguma.sintatico;
-
-import java.util.ArrayList;
+import java.util.*;
 
 public class CodeGenerator extends AlgumaBaseVisitor<Void> {
     private final Scope scope;
-    public final StringBuilder finalOutput = new StringBuilder();
-    private Variavel aux;
+    public final StringBuilder finalResponse = new StringBuilder();
+    private Variable auxVar;
 
     public CodeGenerator(Scope scope){
         this.scope = scope;
     }
 
+
     @Override
     public Void visitPrograma(AlgumaParser.ProgramaContext ctx) {
-        finalOutput.append("#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n\n");
+        finalResponse.append("#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n\n");
         if (!ctx.declaracoes().isEmpty())
             for (AlgumaParser.Decl_local_globalContext declaration : ctx.declaracoes().decl_local_global())
                 visitDecl_local_global(declaration);
-        finalOutput.append("int main() {\n");
+        finalResponse.append("int main() {\n");
         for (AlgumaParser.Declaracao_localContext declaration : ctx.corpo().declaracao_local())
             visitDeclaracao_local(declaration);
         for (AlgumaParser.CmdContext cmd : ctx.corpo().cmd())
             visitCmd(cmd);
-        finalOutput.append("return 0;\n}\n");
+        finalResponse.append("return 0;\n}\n");
         return null;
     }
 
@@ -38,88 +38,88 @@ public class CodeGenerator extends AlgumaBaseVisitor<Void> {
     @Override
     public Void visitDeclaracao_global(AlgumaParser.Declaracao_globalContext ctx) {
         if(ctx.getChild(0).getText().equals("funcao")){
-            Variavel function = scope.lookScope().getVar(ctx.IDENT().getText());
-            finalOutput.append(function.getFuncao().getTipoRetorno().getFormat()).append(" ").append(function.varNome).append("(");
-            ArrayList<Variavel> parameters = function.getFuncao().getParametros();
+            Variable auxFunction = scope.lookScope().getVar(ctx.IDENT().getText());
+            finalResponse.append(auxFunction.getFunction().getResponseType().getFormat()).append(" ").append(auxFunction.name).append("(");
+            ArrayList<Variable> params = auxFunction.getFunction().getParams();
 
-            if (parameters.get(0).tipo.aNativo == Tipo.Nativo.LITERAL)
-                finalOutput.append(parameters.get(0).tipo.getFormat()).append(" *").append(parameters.get(0).varNome);
+            if (params.get(0).type.natives == Type.Natives.LITERAL)
+                finalResponse.append(params.get(0).type.getFormat()).append(" *").append(params.get(0).name);
             else
-                finalOutput.append(parameters.get(0).tipo.getFormat()).append(" ").append(parameters.get(0).varNome);
+                finalResponse.append(params.get(0).type.getFormat()).append(" ").append(params.get(0).name);
 
-            for (int i = 1; i < parameters.size(); i++) {
-                finalOutput.append(", ");
-                if (parameters.get(i).tipo.aNativo == Tipo.Nativo.LITERAL)
-                    finalOutput.append(parameters.get(i).tipo.getFormat()).append(" *").append(parameters.get(i).varNome);
+            for (int i = 1; i < params.size(); i++) {
+                finalResponse.append(", ");
+                if (params.get(i).type.natives == Type.Natives.LITERAL)
+                    finalResponse.append(params.get(i).type.getFormat()).append(" *").append(params.get(i).name);
                 else
-                    geraVariavel(parameters.get(i));
+                    varGenerator(params.get(i));
             }
-            finalOutput.append(") {\n");
+            finalResponse.append(") {\n");
             for (AlgumaParser.Declaracao_localContext declaration : ctx.declaracao_local())
                 visitDeclaracao_local(declaration);
 
-            scope.createNewScope();
+            scope.newScope();
 
-            for (Variavel v : parameters) {
+            for (Variable v : params) {
                 scope.lookScope().add(v);
             }
 
-            for (AlgumaParser.Declaracao_localContext v : function.getFuncao().getLocals())
+            for (AlgumaParser.Declaracao_localContext v : auxFunction.getFunction().getLocals())
                 scope.lookScope().add(v);
 
             for (AlgumaParser.CmdContext cmd : ctx.cmd())
                 visitCmd(cmd);
 
             scope.leaveScope();
-            finalOutput.append("}\n");
-        }   //Vê se é um procedimento e faz as devidas verificações
+            finalResponse.append("}\n");
+        }
         else if(ctx.getChild(0).getText().equals("procedimento")){
-            Variavel proc = scope.lookScope().getVar(ctx.IDENT().getText());
-            finalOutput.append("void ").append(proc.varNome).append("(");
-            ArrayList<Variavel> parametros = proc.getProcedimento().getParametros();
-            if (Tipo.Nativo.LITERAL == parametros.get(0).tipo.aNativo)
-                finalOutput.append(parametros.get(0).tipo.getFormat()).append(" *").append(parametros.get(0).varNome);
+            Variable procedure = scope.lookScope().getVar(ctx.IDENT().getText());
+            finalResponse.append("void ").append(procedure.name).append("(");
+            ArrayList<Variable> params = procedure.getProcedure().getParams();
+            if (Type.Natives.LITERAL == params.get(0).type.natives)
+                finalResponse.append(params.get(0).type.getFormat()).append(" *").append(params.get(0).name);
             else
-                finalOutput.append(parametros.get(0).tipo.getFormat()).append(" ").append(parametros.get(0).varNome);
-            for (int i = 1; i < parametros.size(); i++) {
-                finalOutput.append(", ");
-                if (parametros.get(i).tipo.aNativo == Tipo.Nativo.LITERAL)
-                    finalOutput.append(parametros.get(i).tipo.getFormat()).append(" *").append(parametros.get(0).varNome);
+                finalResponse.append(params.get(0).type.getFormat()).append(" ").append(params.get(0).name);
+            for (int i = 1; i < params.size(); i++) {
+                finalResponse.append(", ");
+                if (params.get(i).type.natives == Type.Natives.LITERAL)
+                    finalResponse.append(params.get(i).type.getFormat()).append(" *").append(params.get(0).name);
                 else
-                    geraVariavel(parametros.get(i));
+                    varGenerator(params.get(i));
             }
-            finalOutput.append(") {\n");
+            finalResponse.append(") {\n");
             for (AlgumaParser.Declaracao_localContext declaracao : ctx.declaracao_local())
                 visitDeclaracao_local(declaracao);
-            scope.createNewScope();
-            for (Variavel v : parametros)
+            scope.newScope();
+            for (Variable v : params)
                 scope.lookScope().add(v);
-            for (Variavel v : proc.getProcedimento().getLocals())
+            for (Variable v : procedure.getProcedure().getLocals())
                 scope.lookScope().add(v);
             for (AlgumaParser.CmdContext cmd : ctx.cmd())
                 visitCmd(cmd);
             scope.leaveScope();
-            finalOutput.append("}\n");
+            finalResponse.append("}\n");
         }
         return null;
     }
 
     @Override
-    public Void visitDeclaracao_local(AlgumaParser.Declaracao_localContext ctx) { // Constante, Tipo, ou Declare.
+    public Void visitDeclaracao_local(AlgumaParser.Declaracao_localContext ctx) {
         switch (ctx.getChild(0).getText()) {
             case "constante":
-                finalOutput.append("#define ").append(ctx.IDENT().getText()).append(" ");
+                finalResponse.append("#define ").append(ctx.IDENT().getText()).append(" ");
                 visitValor_constante(ctx.valor_constante());
                 break;
             case "tipo":
-                finalOutput.append("typedef struct {\n");
-                this.aux = scope.lookScope().getVar(ctx.IDENT().getText());
+                finalResponse.append("typedef struct {\n");
+                this.auxVar = scope.lookScope().getVar(ctx.IDENT().getText());
                 if (ctx.tipo().registro() != null)
-                    for (Variavel v : aux.getRegistro().getAll()) {
-                        geraVariavel(v);
-                        finalOutput.append(";\n");
+                    for (Variable v : auxVar.getRegister().getAll()) {
+                        varGenerator(v);
+                        finalResponse.append(";\n");
                     }
-                finalOutput.append("} ").append(ctx.IDENT().getText()).append(";\n");
+                finalResponse.append("} ").append(ctx.IDENT().getText()).append(";\n");
                 break;
             case "declare":
                 visitVariavel(ctx.variavel());
@@ -133,146 +133,147 @@ public class CodeGenerator extends AlgumaBaseVisitor<Void> {
     @Override
     public Void visitVariavel(AlgumaParser.VariavelContext ctx) {
         for (AlgumaParser.IdentificadorContext id : ctx.identificador()) {
-            String varNome = id.IDENT(0).getText();
+            String name = id.IDENT(0).getText();
             for (int i = 1; i < id.IDENT().size(); i++)
-                varNome += "." + id.IDENT(i).getText();
-            Variavel ident = scope.lookScope().getVar(varNome);
-            geraVariavel(ident);
+                name += "." + id.IDENT(i).getText();
+            Variable indent = scope.lookScope().getVar(name);
+            varGenerator(indent);
             if (!id.dimensao().exp_aritmetica().isEmpty())
                 visitDimensao(id.dimensao());
-            finalOutput.append(";\n");
+            finalResponse.append(";\n");
         }
         return null;
     }
+
     @Override
     public Void visitCmd(AlgumaParser.CmdContext ctx) {
         if (ctx.cmdLeia() != null){
-            Variavel ident = scope.lookScope().getVar(ctx.cmdLeia().identificador(0).getText());
-            finalOutput.append(String.format("scanf(\"%s\", &%s);\n", ident.tipo.getFormatSpec(), ident.varNome));}
+            Variable indent = scope.lookScope().getVar(ctx.cmdLeia().identificador(0).getText());
+            finalResponse.append(String.format("scanf(\"%s\", &%s);\n", indent.type.getFormatSpec(), indent.name));}
         else if (ctx.cmdEscreva() != null){
             for (AlgumaParser.ExpressaoContext exp : ctx.cmdEscreva().expressao()) {
-                Tipo tipoExp = Visitor.VISITOR.checkExpressao(scope.lookScope(), exp);
-                finalOutput.append(String.format("printf(\"%s\", ", tipoExp.getFormatSpec()));
-                visitExpressao(exp);
-                finalOutput.append(");\n");
+                Type expressionType = Visitor.I.checkExpression(scope.lookScope(), exp);
+                finalResponse.append(String.format("printf(\"%s\", ", expressionType.getFormatSpec()));
+                this.visitExpressao(exp);
+                finalResponse.append(");\n");
             }
         }
-        else if (ctx.cmdSe() != null) {
-            finalOutput.append("if (");
-            visitExpressao(ctx.cmdSe().expressao());
-            finalOutput.append(") {\n");
-            for (AlgumaParser.CmdContext cmd : ctx.cmdSe().cmd())
+        else if (ctx.cmdSe() != null){
+            finalResponse.append("if (");
+            this.visitExpressao(ctx.cmdSe().expressao());
+            finalResponse.append(") {\n");
+            for (AlgumaParser.CmdContext cmd : ctx.cmdSe().cmd1)
                 visitCmd(cmd);
-            finalOutput.append("}\n");
-            if (ctx.cmdSe().cmd().size() > 0) {
-                finalOutput.append("else {\n");
-                for (AlgumaParser.CmdContext cmd : ctx.cmdSe().cmd())
+            finalResponse.append("}\n");
+            if (ctx.cmdSe().cmd2.size() > 0) {
+                finalResponse.append("else {\n");
+                for (AlgumaParser.CmdContext cmd : ctx.cmdSe().cmd2)
                     visitCmd(cmd);
-                finalOutput.append("}\n");
+                finalResponse.append("}\n");
             }
         }
         else if (ctx.cmdAtribuicao() != null){
             if (ctx.cmdAtribuicao().getChild(0).getText().equals("^"))
-                finalOutput.append("*");
-            Variavel ident = Visitor.VISITOR.checkIdent(scope.lookScope(), ctx.cmdAtribuicao().identificador());
-            if (ident.tipo != null && ident.tipo.aNativo != Tipo.Nativo.LITERAL) {
+                finalResponse.append("*");
+            Variable indent = Visitor.I.checkIndent(scope.lookScope(), ctx.cmdAtribuicao().identificador());
+            if (indent.type != null && indent.type.natives != Type.Natives.LITERAL) {
                 visitIdentificador(ctx.cmdAtribuicao().identificador());
-                finalOutput.append(" = ");
-                visitExpressao(ctx.cmdAtribuicao().expressao());
+                finalResponse.append(" = ");
+                this.visitExpressao(ctx.cmdAtribuicao().expressao());
             } else {
-                finalOutput.append("strcpy(").append(ctx.cmdAtribuicao().identificador().getText()).append(",");
-                visitExpressao(ctx.cmdAtribuicao().expressao());
-                finalOutput.append(")");
+                finalResponse.append("strcpy(").append(ctx.cmdAtribuicao().identificador().getText()).append(",");
+                this.visitExpressao(ctx.cmdAtribuicao().expressao());
+                finalResponse.append(")");
             }
-            finalOutput.append(";\n");
+            finalResponse.append(";\n");
         }
         else if (ctx.cmdCaso() != null){
-            finalOutput.append("switch (");
+            finalResponse.append("switch (");
             visitExp_aritmetica(ctx.cmdCaso().exp_aritmetica());
-            finalOutput.append(") {\n");
+            finalResponse.append(") {\n");
             for (AlgumaParser.Item_selecaoContext i : ctx.cmdCaso().selecao().item_selecao()) {
-                visitConstantes(i.constantes());
+                this.visitConstantes(i.constantes());
                 for (AlgumaParser.CmdContext cmd : i.cmd())
                     visitCmd(cmd);
-                finalOutput.append("break;\n");
+                finalResponse.append("break;\n");
             }
             if (!ctx.cmdCaso().cmd().isEmpty()) {
-                finalOutput.append("default:\n");
+                finalResponse.append("default:\n");
                 for (AlgumaParser.CmdContext cmd : ctx.cmdCaso().cmd())
                     visitCmd(cmd);
             }
-            finalOutput.append("}\n");
+            finalResponse.append("}\n");
         }
-        else if (ctx.cmdPara() != null) {
-            finalOutput.append("for (");
-            Variavel ident = scope.lookScope().getVar(ctx.cmdPara().IDENT().getText());
-            finalOutput.append(ident.varNome).append(" = ");
-            visitExp_aritmetica(ctx.cmdPara().exp_aritmetica(0));
-            finalOutput.append("; ");
-            finalOutput.append(ident.varNome).append(" <= ");
-            visitExp_aritmetica(ctx.cmdPara().exp_aritmetica(1));
-            finalOutput.append("; ");
-            finalOutput.append(ident.varNome).append("++) {\n");
+        else if (ctx.cmdPara() != null){
+            finalResponse.append("for (");
+            Variable indent = scope.lookScope().getVar(ctx.cmdPara().IDENT().getText());
+            finalResponse.append(indent.name).append(" = ");
+            visitExp_aritmetica(ctx.cmdPara().a);
+            finalResponse.append("; ");
+            finalResponse.append(indent.name).append(" <= ");
+            visitExp_aritmetica(ctx.cmdPara().b);
+            finalResponse.append("; ");
+            finalResponse.append(indent.name).append("++) {\n");
             for (AlgumaParser.CmdContext cmd : ctx.cmdPara().cmd())
                 visitCmd(cmd);
-            finalOutput.append("}\n");
+            finalResponse.append("}\n");
         }
         else if (ctx.cmdEnquanto() != null){
-            finalOutput.append("while (");
-            visitExpressao(ctx.cmdEnquanto().expressao());
-            finalOutput.append(") {\n");
+            finalResponse.append("while (");
+            this.visitExpressao(ctx.cmdEnquanto().expressao());
+            finalResponse.append(") {\n");
             for (AlgumaParser.CmdContext cmd : ctx.cmdEnquanto().cmd())
                 visitCmd(cmd);
-            finalOutput.append("}\n");
+            finalResponse.append("}\n");
         }
         else if (ctx.cmdFaca() != null){
-            finalOutput.append("do {\n");
+            finalResponse.append("do {\n");
             for (AlgumaParser.CmdContext cmd : ctx.cmdFaca().cmd())
                 visitCmd(cmd);
-            finalOutput.append("} while (");
-            visitExpressao(ctx.cmdFaca().expressao());
-            finalOutput.append(");\n");
+            finalResponse.append("} while (");
+            this.visitExpressao(ctx.cmdFaca().expressao());
+            finalResponse.append(");\n");
         }
         else if (ctx.cmdChamada() != null){
-            finalOutput.append(ctx.cmdChamada().IDENT().getText()).append("(");
-            visitExpressao(ctx.cmdChamada().expressao(0));
+            finalResponse.append(ctx.cmdChamada().IDENT().getText()).append("(");
+            this.visitExpressao(ctx.cmdChamada().expressao(0));
             for (int i = 1; i < ctx.cmdChamada().expressao().size(); i++) {
-                finalOutput.append(", ");
-                visitExpressao(ctx.cmdChamada().expressao(i));
+                finalResponse.append(", ");
+                this.visitExpressao(ctx.cmdChamada().expressao(i));
             }
-            finalOutput.append(");\n");
+            finalResponse.append(");\n");
         }
         else if (ctx.cmdRetorne() != null){
-            finalOutput.append("return ");
-            visitExpressao(ctx.cmdRetorne().expressao());
-            finalOutput.append(";\n");
+            finalResponse.append("return ");
+            this.visitExpressao(ctx.cmdRetorne().expressao());
+            finalResponse.append(";\n");
         }
         return null;
     }
 
     @Override
     public Void visitConstantes(AlgumaParser.ConstantesContext ctx) {
-        int inicio = ctx.numero_intervalo(0).op_unario() != null ? -Integer.parseInt(ctx.numero_intervalo(0).NUM_INT(0).getText()) : Integer.parseInt(ctx.numero_intervalo(0).NUM_INT(0).getText()); // Corrigido aqui
-        int fim;
-        if (ctx.numero_intervalo(0).op_unario(1) != null) // Corrigido aqui
-            fim = -Integer.parseInt(ctx.numero_intervalo(0).NUM_INT(1).getText());
+        int begin = ctx.numero_intervalo(0).opu1 != null ? -Integer.parseInt(ctx.numero_intervalo(0).NUM_INT(0).getText()) : Integer.parseInt(ctx.numero_intervalo(0).NUM_INT(0).getText());
+        int end;
+        if (ctx.numero_intervalo(0).opu2 != null)
+            end = -Integer.parseInt(ctx.numero_intervalo(0).NUM_INT(1).getText());
         else if (ctx.numero_intervalo(0).NUM_INT(1) != null)
-            fim = Integer.parseInt(ctx.numero_intervalo(0).NUM_INT(1).getText());
+            end = Integer.parseInt(ctx.numero_intervalo(0).NUM_INT(1).getText());
         else
-            fim = inicio;
-        for (int i = inicio; i <= fim; i++)
-            finalOutput.append("case ").append(i).append(":\n");
+            end = begin;
+        for (int i = begin; i <= end; i++)
+            finalResponse.append("case ").append(i).append(":\n");
 
-        for (int i = 1; i < ctx.numero_intervalo().size(); i++) {
-            inicio = ctx.numero_intervalo(i).op_unario() != null ? -Integer.parseInt(ctx.numero_intervalo(i).NUM_INT(0).getText()) : Integer.parseInt(ctx.numero_intervalo(i).NUM_INT(0).getText()); // Corrigido aqui
-            if (ctx.numero_intervalo(i).op_unario(1) != null) // Corrigido aqui
-                fim = -Integer.parseInt(ctx.numero_intervalo(i).NUM_INT(1).getText());
+        for (int i = 1; i < ctx.numero_intervalo().size(); i++){
+            begin = ctx.numero_intervalo(i).opu1 != null ? -Integer.parseInt(ctx.numero_intervalo(i).NUM_INT(0).getText()) : Integer.parseInt(ctx.numero_intervalo(i).NUM_INT(0).getText());
+            if (ctx.numero_intervalo(i).opu2 != null)
+                end = -Integer.parseInt(ctx.numero_intervalo(i).NUM_INT(1).getText());
             else if (ctx.numero_intervalo(0).NUM_INT(1) != null)
-                fim = Integer.parseInt(ctx.numero_intervalo(i).NUM_INT(1).getText());
+                end = Integer.parseInt(ctx.numero_intervalo(i).NUM_INT(1).getText());
             else
-                fim = inicio;
-            for (int j = inicio; i <= fim; i++)
-                finalOutput.append("case ").append(j).append(":\n");
+                end = begin;
+            for (int j = begin; i <= end; i++)
+                finalResponse.append("case ").append(j).append(":\n");
         }
         return null;
     }
@@ -281,7 +282,7 @@ public class CodeGenerator extends AlgumaBaseVisitor<Void> {
     public Void visitTermo_logico(AlgumaParser.Termo_logicoContext ctx) {
         visitFator_logico(ctx.fator_logico(0));
         for (int i = 0; i < ctx.op_logico_2().size(); i++) {
-            finalOutput.append(" && ");
+            finalResponse.append(" && ");
             visitFator_logico(ctx.fator_logico(i + 1));
         }
         return null;
@@ -289,9 +290,8 @@ public class CodeGenerator extends AlgumaBaseVisitor<Void> {
 
     @Override
     public Void visitFator_logico(AlgumaParser.Fator_logicoContext ctx) {
-        // Se o operador for não, imprime '!' no arquivo final
         if (ctx.getChild(0).getText().equals("nao"))
-            finalOutput.append("!");
+            finalResponse.append("!");
         visitParcela_logica(ctx.parcela_logica());
         return null;
     }
@@ -303,19 +303,19 @@ public class CodeGenerator extends AlgumaBaseVisitor<Void> {
             return null;
         }
         if (ctx.getText().equals("verdadeiro"))
-            finalOutput.append(" true ");
+            finalResponse.append(" true ");
         else
-            finalOutput.append(" false ");
+            finalResponse.append(" false ");
 
         return null;
     }
 
     @Override
     public Void visitIdentificador(AlgumaParser.IdentificadorContext ctx) {
-        finalOutput.append(ctx.IDENT(0).getText());
+        finalResponse.append(ctx.IDENT(0).getText());
         for (int i = 1; i < ctx.IDENT().size(); i++) {
-            finalOutput.append(".");
-            finalOutput.append(ctx.IDENT(i).getText());
+            finalResponse.append(".");
+            finalResponse.append(ctx.IDENT(i).getText());
         }
         if (ctx.dimensao().getChild(0) != null)
             visitDimensao(ctx.dimensao());
@@ -324,10 +324,10 @@ public class CodeGenerator extends AlgumaBaseVisitor<Void> {
 
     @Override
     public Void visitDimensao(AlgumaParser.DimensaoContext ctx) {
-        finalOutput.append("[");
+        finalResponse.append("[");
         for (AlgumaParser.Exp_aritmeticaContext exp : ctx.exp_aritmetica())
             visitExp_aritmetica(exp);
-        finalOutput.append("]");
+        finalResponse.append("]");
         return null;
     }
 
@@ -342,16 +342,16 @@ public class CodeGenerator extends AlgumaBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitOp_relacional(AlgumaParser.Op_relacionalContext ctx){ // Equivalencia do operador de Java para C
+    public Void visitOp_relacional(AlgumaParser.Op_relacionalContext ctx){
         switch (ctx.getText()){
             case "=":
-                finalOutput.append(" == ");
+                finalResponse.append(" == ");
                 break;
             case "<>":
-                finalOutput.append(" != ");
+                finalResponse.append(" != ");
                 break;
             default:
-                finalOutput.append(ctx.getText());
+                finalResponse.append(ctx.getText());
                 break;
         }
         return null;
@@ -359,10 +359,10 @@ public class CodeGenerator extends AlgumaBaseVisitor<Void> {
 
     @Override
     public Void visitTermo(AlgumaParser.TermoContext ctx) {
-        visitFator(ctx.fator(0));
+        this.visitFator(ctx.fator(0));
         for (int i = 0; i < ctx.op2().size(); i++) {
-            finalOutput.append(" ").append(ctx.op2(i).getText()).append(" ");
-            visitFator(ctx.fator(i + 1));
+            finalResponse.append(" ").append(ctx.op2(i).getText()).append(" ");
+            this.visitFator(ctx.fator(i + 1));
         }
 
         return null;
@@ -370,10 +370,10 @@ public class CodeGenerator extends AlgumaBaseVisitor<Void> {
 
     @Override
     public Void visitFator(AlgumaParser.FatorContext ctx) {
-        visitParcela(ctx.parcela(0));
+        this.visitParcela(ctx.parcela(0));
         for (int i = 0; i < ctx.op3().size(); i++) {
-            finalOutput.append(" ").append(ctx.op3(i).getText()).append(" ");
-            visitParcela(ctx.parcela(i));
+            finalResponse.append(" ").append(ctx.op3(i).getText()).append(" ");
+            this.visitParcela(ctx.parcela(i));
         }
         return null;
     }
@@ -382,19 +382,19 @@ public class CodeGenerator extends AlgumaBaseVisitor<Void> {
     public Void visitParcela(AlgumaParser.ParcelaContext ctx) {
         if (ctx.parcela_unario() != null) {
             if (ctx.op_unario() != null)
-                finalOutput.append(" ").append(ctx.op_unario().getText());
-            visitParcela_unario(ctx.parcela_unario());
+                finalResponse.append(" ").append(ctx.op_unario().getText());
+            this.visitParcela_unario(ctx.parcela_unario());
         } else
-            visitParcela_nao_unario(ctx.parcela_nao_unario());
+            this.visitParcela_nao_unario(ctx.parcela_nao_unario());
         return null;
     }
 
     @Override
     public Void visitExp_aritmetica(AlgumaParser.Exp_aritmeticaContext ctx) {
-        visitTermo(ctx.termo(0));
+        this.visitTermo(ctx.termo(0));
         for (int i = 0; i < ctx.op1().size(); i++) {
-            finalOutput.append(" ").append(ctx.op1(i).getText()).append(" ");
-            visitTermo(ctx.termo(i + 1));
+            finalResponse.append(" ").append(ctx.op1(i).getText()).append(" ");
+            this.visitTermo(ctx.termo(i + 1));
         }
         return null;
     }
@@ -403,27 +403,27 @@ public class CodeGenerator extends AlgumaBaseVisitor<Void> {
     public Void visitParcela_unario(AlgumaParser.Parcela_unarioContext ctx) {
         if (ctx.identificador() != null) {
             if (ctx.getChild(0).getText().equals("^"))
-                finalOutput.append("*");
+                finalResponse.append("*");
             visitIdentificador(ctx.identificador());
         } else if (ctx.IDENT() != null) {
-            finalOutput.append(ctx.IDENT().getText()).append("(");
-            visitExpressao(ctx.expressao(0));
+            finalResponse.append(ctx.IDENT().getText()).append("(");
+            this.visitExpressao(ctx.expressao(0));
             for (int i = 1; i < ctx.expressao().size(); i++) {
-                finalOutput.append(", ");
-                visitExpressao(ctx.expressao(i));
+                finalResponse.append(", ");
+                this.visitExpressao(ctx.expressao(i));
             }
-            finalOutput.append(")");
+            finalResponse.append(")");
         }
         else if (ctx.NUM_INT() != null)
-            finalOutput.append(ctx.NUM_INT().getText());
+            finalResponse.append(ctx.NUM_INT().getText());
         else if (ctx.NUM_REAL() != null)
-            finalOutput.append(ctx.NUM_REAL().getText());
+            finalResponse.append(ctx.NUM_REAL().getText());
         else {
-            finalOutput.append("(");
+            finalResponse.append("(");
             for (AlgumaParser.ExpressaoContext exp : ctx.expressao())
-                visitExpressao(exp);
+                this.visitExpressao(exp);
 
-            finalOutput.append(")");
+            finalResponse.append(")");
         }
         return null;
     }
@@ -432,65 +432,67 @@ public class CodeGenerator extends AlgumaBaseVisitor<Void> {
     public Void visitParcela_nao_unario(AlgumaParser.Parcela_nao_unarioContext ctx) {
         if (ctx.identificador() != null) {
             if (ctx.getChild(0).getText().equals("&"))
-                finalOutput.append("&");
+                finalResponse.append("&");
             visitIdentificador(ctx.identificador());
         } else
-            finalOutput.append(ctx.CADEIA().getText());
+            finalResponse.append(ctx.CADEIA().getText());
         return null;
     }
 
-    public void geraVariavel(Variavel v) {
-        if (v.tipo != null && v.tipo.aNativo != null) {
-            if(null != v.tipo.aNativo)
-                switch (v.tipo.aNativo) {
+
+    public void varGenerator(Variable v) {
+        if (v.type != null && v.type.natives != null) {
+            if(null != v.type.natives)
+                switch (v.type.natives) {
                     case LITERAL:
-                        finalOutput.append(String.format("%s %s[100]", v.tipo.getFormat(), v.varNome));
+                        finalResponse.append(String.format("%s %s[100]", v.type.getFormat(), v.name));
                         break;
                     case PONTEIRO:
-                        finalOutput.append(String.format("%s *%s", v.getTipoPonteiroAninhado().getFormat(), v.varNome));
+                        finalResponse.append(String.format("%s *%s", v.getNestedPointerType().getFormat(), v.name));
                         break;
                     case REGISTRO:
-                        finalOutput.append("struct {\n");
-                        for (Variavel i : v.getRegistro().getAll()) {
-                            geraVariavel(i);
-                            finalOutput.append(";\n");
-                        }   finalOutput.append("} ").append(v.varNome);
+                        finalResponse.append("struct {\n");
+                        for (Variable i : v.getRegister().getAll()) {
+                            varGenerator(i);
+                            finalResponse.append(";\n");
+                        }   finalResponse.append("} ").append(v.name);
                         break;
                     case INTEIRO:
-                        finalOutput.append(String.format("%s %s", v.tipo.getFormat(), v.varNome));
+                        finalResponse.append(String.format("%s %s", v.type.getFormat(), v.name));
                         break;
                     case REAL:
-                        finalOutput.append(String.format("%s %s", v.tipo.getFormat(), v.varNome));
+                        finalResponse.append(String.format("%s %s", v.type.getFormat(), v.name));
                         break;
                     default:
                         break;
                 }
         } else
-            finalOutput.append(String.format("%s %s", v.tipo.criados, v.varNome));
+            finalResponse.append(String.format("%s %s", v.type.created, v.name));
     }
 
     @Override
-    public Void visitValor_constante(AlgumaParser.Valor_constanteContext ctx) { // Equivalencia do operador de Java para C
+    public Void visitValor_constante(AlgumaParser.Valor_constanteContext ctx) {
         if (ctx.CADEIA() != null)
-            finalOutput.append("\"").append(ctx.CADEIA().getText()).append("\"\n");
+            finalResponse.append("\"").append(ctx.CADEIA().getText()).append("\"\n");
         else if (ctx.NUM_INT() != null)
-            finalOutput.append(Integer.parseInt(ctx.NUM_INT().getText())).append("\n");
+            finalResponse.append(Integer.parseInt(ctx.NUM_INT().getText())).append("\n");
         else if (ctx.NUM_REAL() != null)
-            finalOutput.append(Float.parseFloat(ctx.NUM_REAL().getText())).append("\n");
+            finalResponse.append(Float.parseFloat(ctx.NUM_REAL().getText())).append("\n");
         else if (ctx.getChild(0).getText().equals("verdadeiro"))
-            finalOutput.append("1\n");
+            finalResponse.append("1\n");
         else
-            finalOutput.append("0\n");
+            finalResponse.append("0\n");
 
         return null;
     }
 
+
     @Override
     public Void visitExpressao(AlgumaParser.ExpressaoContext ctx) {
-        visitTermo_logico(ctx.termo_logico(0));
+        this.visitTermo_logico(ctx.termo_logico(0));
         for (int i = 0; i < ctx.op_logico_1().size(); i++) {
-            finalOutput.append(" || ");
-            visitTermo_logico(ctx.termo_logico(i + 1));
+            finalResponse.append(" || ");
+            this.visitTermo_logico(ctx.termo_logico(i + 1));
         }
         return null;
     }

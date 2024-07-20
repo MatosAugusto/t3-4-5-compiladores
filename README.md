@@ -95,7 +95,7 @@ cd corretor
 
 Navigate to the directory you cloned:
 ```
-cd /home/$USER/t2-compiladores
+cd /home/$USER/t3-4-5-compiladores
 ```
 
 Compile the project using Maven:
@@ -104,13 +104,13 @@ mvn package
 ```
 This is possible because the file 'pom.xml' is configured to compile the project.
 
-The `alguma-lexico-1.0-SNAPSHOT.jar` file will be created in the `/home/$USER/t2-compiladores/target` directory.
+The `alguma-lexico-1.0-SNAPSHOT.jar` file will be created in the `/home/$USER/t3-4-5-compiladores/target` directory.
 
 4. **Running Tests**
 
 Execute the following command to run the tests:
 ```
-java -jar /home/$USER/corretor/compiladores-corretor-automatico-1.0-SNAPSHOT-jar-with-dependencies.jar " java -jar /home/$USER/t3-4-5-compiladores/target/alguma-lexico-1.0-SNAPSHOT-jar-with-dependencies.jar" gcc home/corretor/temp /home/$USER/corretor/casos-de-teste/casos-de-teste  "Student 1 number, Student 2 number, Student 3 number" tudo
+java -jar /home/$USER/corretor/compiladores-corretor-automatico-1.0-SNAPSHOT-jar-with-dependencies.jar " java -jar /home/$USER/t3-4-5-compiladores/target/alguma-lexico-1.0-SNAPSHOT-jar-with-dependencies.jar" gcc home/corretor/temp /home/$USER/corretor/casos-de-teste/casos-de-teste  "Student 1 number, Student 2 number, Student 3 number" t1 t2 t3 t4 t5
 ```
 
 Replace `"Student 1 number, Student 2 number, Student 3 number"` with the actual student numbers.

@@ -5,9 +5,10 @@ public class Errors {
 
     private final ArrayList<String> errors = new ArrayList<>();
 
-    public void addError(int id, int line, String name){ // Add errors on the list
-        String base = "Linha " + line;
-        switch(id) {
+    public void addError(int id, int linha, String name){
+        String base = "Linha " + linha;
+        switch(id)
+        {
             case 0:
                 errors.add(base + ": identificador " + name + " nao declarado");
                 break;
@@ -32,6 +33,6 @@ public class Errors {
 
     public ArrayList<String> getErrors(){
         return errors;
-    } // Return errors of the list
+    }
 
 }

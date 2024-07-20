@@ -1,30 +1,29 @@
 package br.ufscar.dc.compiladores.alguma.sintatico;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class Scope {
 
-    private final LinkedList<SymbleTable> symbleTabScope;
+    private final LinkedList<SymbolTable> symbolTableScope;
 
     public Scope() {
-        symbleTabScope = new LinkedList<>();
-        createNewScope();
+        symbolTableScope = new LinkedList<>();
+        newScope();
     }
 
-    public final void createNewScope() {
-        symbleTabScope.push(new SymbleTable());
+    public final void newScope() {
+        symbolTableScope.push(new SymbolTable());
     }
 
-    public List<SymbleTable> runScope() {
-        return symbleTabScope;
+    public List<SymbolTable> runScope() {
+        return symbolTableScope;
     }
 
     public void leaveScope() {
-        symbleTabScope.pop();
+        symbolTableScope.pop();
     }
 
-    public SymbleTable lookScope() {
-        return symbleTabScope.peek();
+    public SymbolTable lookScope() {
+        return symbolTableScope.peek();
     }
 }

@@ -1,26 +1,25 @@
 package br.ufscar.dc.compiladores.alguma.sintatico;
 
+import java.util.*;
 import org.antlr.v4.runtime.tree.TerminalNode;
-
-import java.util.ArrayList;
-import java.util.List;
 
 
 public class Visitor extends AlgumaBaseVisitor<Void> {
-    public Errors errorlist = new Errors();
+    public Errors errorListener = new Errors();
     private final Scope scope = new Scope();
-    public static final Visitor VISITOR = new Visitor();
+    public static final Visitor I = new Visitor();
 
-    private boolean returnAux;
+    private boolean retAux;
 
     @Override
     public Void visitDecl_local_global(AlgumaParser.Decl_local_globalContext ctx) {
-        ArrayList<Variavel> entry = new ArrayList<>();
+        ArrayList<Variable> entry = new ArrayList<>();
         if (ctx.declaracao_local() != null)
             entry = checkLocal(scope, ctx.declaracao_local());
         else
             entry.add(checkGlobal(scope, ctx.declaracao_global()));
-        addVarScope(entry);
+
+        addScopeVar(entry);
 
         return null;
     }
@@ -29,21 +28,21 @@ public class Visitor extends AlgumaBaseVisitor<Void> {
         return scope;
     }
 
-    public void addVarScope(ArrayList<Variavel> var) {
-        for(Variavel aux: var) {
-            scope.lookScope().add(aux);
+    public void addScopeVar(ArrayList<Variable> var) {
+        for(Variable auxVar: var) {
+            scope.lookScope().add(auxVar);
         }
     }
 
     @Override
     public Void visitCorpo(AlgumaParser.CorpoContext ctx) {
 
-        ArrayList<Variavel> variableList = new ArrayList<>();
+        ArrayList<Variable> variableList = new ArrayList<>();
 
         for (AlgumaParser.Declaracao_localContext x : ctx.declaracao_local())
         {
             variableList.addAll(checkLocal(scope, x));
-            addVarScope(variableList);
+            addScopeVar(variableList);
         }
         for (AlgumaParser.CmdContext cmd : ctx.cmd())
             checkCmd(scope.lookScope(), cmd);
@@ -52,438 +51,440 @@ public class Visitor extends AlgumaBaseVisitor<Void> {
     }
 
 
-    public ArrayList<Variavel> checkLocal(Scope scope, AlgumaParser.Declaracao_localContext ctx) {
-        ArrayList<Variavel> result = new ArrayList<>();
-        switch(Correspondence(ctx.getStart().getText())){
+    public ArrayList<Variable> checkLocal(Scope scope, AlgumaParser.Declaracao_localContext ctx) {
+        ArrayList<Variable> response = new ArrayList<>();
+        switch(Equivalence(ctx.getStart().getText())){
 
             case 1:
-                Tipo type1 = checkTipo(ctx.tipo());
-                if (type1.aNativo != null && type1.aNativo == Tipo.Nativo.INVALIDO) {
-                    errorlist.addError(3,ctx.start.getLine(), ctx.tipo().getText());
+                Type type1 = checkType(ctx.tipo());
+                if (type1.natives != null && type1.natives == Type.Natives.INVALIDO) {
+                    errorListener.addError(3,ctx.start.getLine(), ctx.tipo().getText());
                 }else{
                     String name = ctx.IDENT().getText();
-                    Tipo.adicionaNovoTipo(name);
-                    Variavel newType = new Variavel(name, type1);
+                    Type.addNewType(name);
+                    Variable newType = new Variable(name, type1);
 
-                    if (newType.tipo.aNativo == Tipo.Nativo.REGISTRO)
-                        newType.registro = checkRegistro(scope, ctx.tipo().registro()).registro;
+                    if (newType.type.natives == Type.Natives.REGISTRO)
+                        newType.register = checkRegister(scope, ctx.tipo().registro()).register;
 
-                    result.add(newType);
+                    response.add(newType);
                 }
-            break;
+                break;
             case 2:
-                Tipo type2 = new Tipo(checkTipoNat(ctx.tipo_basico()));
+                Type type2 = new Type(checkNativeType(ctx.tipo_basico()));
 
-                if (type2.aNativo != null && type2.aNativo == Tipo.Nativo.INVALIDO)
-                    errorlist.addError(3,ctx.start.getLine(), ctx.tipo().getText());
+                if (type2.natives != null && type2.natives == Type.Natives.INVALIDO)
+                    errorListener.addError(3,ctx.start.getLine(), ctx.tipo().getText());
                 else
-                    result.add(new Variavel(ctx.IDENT().getText(), type2));
-            break;
+                    response.add(new Variable(ctx.IDENT().getText(), type2));
+                break;
             case 3:
-                result = checkVar(scope, ctx.variavel());
-            break;
+                response = checkVar(scope, ctx.variavel());
+                break;
         }
-        return result;
+        return response;
     }
 
-    public Variavel checkGlobal(Scope scope, AlgumaParser.Declaracao_globalContext ctx) {
-        Variavel aux = null;
+    public Variable checkGlobal(Scope scope, AlgumaParser.Declaracao_globalContext ctx) {
+        Variable auxVar = null;
 
-        switch(Correspondence(ctx.getStart().getText())){
+        switch(Equivalence(ctx.getStart().getText())){
 
             case 4:
-                Tipo type4 = checkEstendido(ctx.tipo_estendido());
-                scope.createNewScope();
-                returnAux = true;
-                aux = new Variavel(ctx.IDENT().getText(), new Tipo(Tipo.Nativo.FUNCAO));
+                Type returnType = checkExtended(ctx.tipo_estendido());
+                scope.newScope();
+                retAux = true;
+                auxVar = new Variable(ctx.IDENT().getText(), new Type(Type.Natives.FUNCAO));
                 if (ctx.parametros() != null) {
 
-                    ArrayList<Variavel> param = checkParams(scope, ctx.parametros());
-                    aux.funcao.setParametros(param);
-                    addVarScope(param);
+                    ArrayList<Variable> param = checkParameters(scope, ctx.parametros());
+                    auxVar.function.setParams(param);
+                    addScopeVar(param);
                 }
-                aux.funcao.setTipoRetorno(type4);
-                ArrayList<Variavel> declaration = new ArrayList<>();
-                for (AlgumaParser.Declaracao_localContext auxDecl : ctx.declaracao_local())
-                    declaration.addAll(checkLocal(scope, auxDecl));
-                addVarScope(declaration);
-                aux.funcao.setLocal(declaration);
+                auxVar.function.setResponseType(returnType);
+                ArrayList<Variable> declare = new ArrayList<>();
+                for (AlgumaParser.Declaracao_localContext declaration : ctx.declaracao_local())
+                    declare.addAll(checkLocal(scope, declaration));
+                addScopeVar(declare);
+                auxVar.function.setLocal(declare);
                 for (AlgumaParser.CmdContext cmd : ctx.cmd())
                     checkCmd(scope.lookScope(), cmd);
                 scope.leaveScope();
-                returnAux = false;
-            break;
+                retAux = false;
+                break;
 
             case 5:
-                scope.createNewScope();
-                aux = new Variavel(ctx.IDENT().getText(), new Tipo(Tipo.Nativo.PROCEDIMENTO));
+                scope.newScope();
+                auxVar = new Variable(ctx.IDENT().getText(), new Type(Type.Natives.PROCEDIMENTO));
 
                 if (ctx.declaracao_local() != null) {
-                    ArrayList<Variavel> auxList = new ArrayList<>();
+                    ArrayList<Variable> auxDec = new ArrayList<>();
 
-                    for (AlgumaParser.Declaracao_localContext auxDecl : ctx.declaracao_local()) {
-                        auxList.addAll(checkLocal(scope, auxDecl));
+                    for (AlgumaParser.Declaracao_localContext declaration : ctx.declaracao_local()) {
+                        auxDec.addAll(checkLocal(scope, declaration));
                     }
-                    addVarScope(auxList);
-                    aux.procedimento.setLocal(auxList);
+                    addScopeVar(auxDec);
+                    auxVar.procedure.setLocal(auxDec);
                 }
                 if (ctx.parametros() != null) {
-                    ArrayList<Variavel> param = checkParams(scope, ctx.parametros());
+                    ArrayList<Variable> params = checkParameters(scope, ctx.parametros());
 
-                    addVarScope(param);
-                    aux.procedimento.setParametros(param);
+                    addScopeVar(params);
+                    auxVar.procedure.setParams(params);
                 }
                 if (ctx.cmd() != null)
                     for (AlgumaParser.CmdContext cmd : ctx.cmd())
                         checkCmd(scope.lookScope(), cmd);
 
                 scope.leaveScope();
-            break;
+                break;
         }
-        return aux;
+        return auxVar;
     }
 
 
-    public Variavel checkRegistro(Scope scope, AlgumaParser.RegistroContext ctx) {
+    public Variable checkRegister(Scope scope, AlgumaParser.RegistroContext ctx) {
 
-        Variavel register = new Variavel("", new Tipo(Tipo.Nativo.REGISTRO));
-        scope.createNewScope();
+        Variable auxReg = new Variable("", new Type(Type.Natives.REGISTRO));
+        scope.newScope();
 
         for (int i = 0; i < ctx.variavel().size(); i++) {
-            register.registro.addRegistro(checkVar(scope, ctx.variavel(i)));
+            auxReg.register.addRegister(checkVar(scope, ctx.variavel(i)));
         }
 
-        return register;
+        return auxReg;
     }
 
-    public int Correspondence(String receiver){
-        switch(receiver){
+
+
+    public int Equivalence(String receptor){
+        switch(receptor){
             case "tipo": return 1;
             case "constante": return 2;
             case "declare": return 3;
             case "funcao": return 4;
             case "procedimento": return 5;
         }
-    return 0;
+        return 0;
     }
 
-    public ArrayList<Variavel> checkParams(Scope scope, AlgumaParser.ParametrosContext ctx) {
+    public ArrayList<Variable> checkParameters(Scope scope, AlgumaParser.ParametrosContext ctx) {
 
-        ArrayList<Variavel> result = new ArrayList<>();
+        ArrayList<Variable> response = new ArrayList<>();
 
         for (AlgumaParser.ParametroContext param : ctx.parametro()){
-            ArrayList<Variavel> params = new ArrayList<>();
-            Tipo tipo = checkEstendido(param.tipo_estendido());
+            ArrayList<Variable> parameters = new ArrayList<>();
+            Type type = checkExtended(param.tipo_estendido());
 
             for (AlgumaParser.IdentificadorContext i : param.identificador()) {
-                    Variavel auxvar = new Variavel(i.getText(), tipo);
-                        for (SymbleTable st : scope.runScope()) {
-                            Variavel aux = addNovoTipo(st, auxvar, tipo.criados);
-                            if (aux.tipo != null)
-                                auxvar = aux;
-                        }
-                    params.add(auxvar);
-                    scope.lookScope().add(auxvar);
+                Variable auxvar = new Variable(i.getText(), type);
+                for (SymbolTable st : scope.runScope()) {
+                    Variable aux = addNewType(st, auxvar, type.created);
+                    if (aux.type != null)
+                        auxvar = aux;
                 }
-            result.addAll(params);
+                parameters.add(auxvar);
+                scope.lookScope().add(auxvar);
+            }
+            response.addAll(parameters);
         }
 
-        return result;
+        return response;
     }
 
-    public Tipo checkIdentacao(AlgumaParser.Tipo_basico_identContext ctx) {
+    public Type checkIndentType(AlgumaParser.Tipo_basico_identContext ctx) {
         if (ctx.tipo_basico() != null)
-            return new Tipo(checkTipoNat(ctx.tipo_basico()));
+            return new Type(checkNativeType(ctx.tipo_basico()));
 
-        if ((Tipo.getTipo(ctx.IDENT().getText()))!= null)
-            return new Tipo(Tipo.getTipo(ctx.IDENT().getText()));
+        if ((Type.getType(ctx.IDENT().getText()))!= null)
+            return new Type(Type.getType(ctx.IDENT().getText()));
 
-        return new Tipo(Tipo.Nativo.INVALIDO);
+        return new Type(Type.Natives.INVALIDO);
     }
 
-    public void checkCmd(SymbleTable st, AlgumaParser.CmdContext ctx) {
+    public void checkCmd(SymbolTable st, AlgumaParser.CmdContext ctx) {
         String base = "";
         if (ctx.cmdAtribuicao() != null){
-            Variavel left = checkIdent(st, ctx.cmdAtribuicao().identificador());
-            Tipo typeLeft = left.tipo;
-            if (typeLeft == null) {
-                errorlist.addError(0,ctx.cmdAtribuicao().identificador().start.getLine(), ctx.cmdAtribuicao().identificador().getText());
+            Variable left = checkIndent(st, ctx.cmdAtribuicao().identificador());
+            Type leftType = left.type;
+            if (leftType == null) {
+                errorListener.addError(0,ctx.cmdAtribuicao().identificador().start.getLine(), ctx.cmdAtribuicao().identificador().getText());
                 return;
             }
 
-            Tipo typeRight = checkExpressao(st, ctx.cmdAtribuicao().expressao());
+            Type rightType = checkExpression(st, ctx.cmdAtribuicao().expressao());
 
             if (ctx.getChild(0).getText().contains("^")) {
-                 base += "^";
-                typeLeft = left.ponteiro.getTipo();
+                base += "^";
+                leftType = left.pointer.getType();
             }
 
-             if (typeLeft.validaTipo(typeRight).aNativo == Tipo.Nativo.INVALIDO && typeLeft.aNativo != null)  {
-                errorlist.addError(2,ctx.cmdAtribuicao().identificador().start.getLine(), base + ctx.cmdAtribuicao().identificador().getText());
+            if (leftType.checkType(rightType).natives == Type.Natives.INVALIDO && leftType.natives != null)  {
+                errorListener.addError(2,ctx.cmdAtribuicao().identificador().start.getLine(), base + ctx.cmdAtribuicao().identificador().getText());
             }
         }
         else if (ctx.cmdEscreva() != null){
             for (AlgumaParser.ExpressaoContext exp : ctx.cmdEscreva().expressao())
-                checkExpressao(st, exp);
-            }
+                checkExpression(st, exp);
+        }
         else if (ctx.cmdLeia() != null){
-                    for (AlgumaParser.IdentificadorContext i : ctx.cmdLeia().identificador()) {
-                        Variavel aux = checkIdent(st, i);
-                        if (aux != null && aux.tipo == null)
-                            errorlist.addError(0,i.getStart().getLine(), i.getText());
-                    }
+            for (AlgumaParser.IdentificadorContext i : ctx.cmdLeia().identificador()) {
+                Variable auxVar = checkIndent(st, i);
+                if (auxVar != null && auxVar.type == null)
+                    errorListener.addError(0,i.getStart().getLine(), i.getText());
+            }
         }
         else if (ctx.cmdEnquanto() != null)
-            checkExpressao(st, ctx.cmdEnquanto().expressao());
+            checkExpression(st, ctx.cmdEnquanto().expressao());
         else if (ctx.cmdSe() != null){
-            checkExpressao(st, ctx.cmdSe().expressao());
+            checkExpression(st, ctx.cmdSe().expressao());
             for (AlgumaParser.CmdContext cmd : ctx.cmdSe().cmd())
                 checkCmd(st, cmd);
         }
         else if (ctx.cmdFaca() != null){
-            checkExpressao(st, ctx.cmdFaca().expressao());
+            checkExpression(st, ctx.cmdFaca().expressao());
             for (AlgumaParser.CmdContext cmd : ctx.cmdFaca().cmd())
                 checkCmd(st, cmd);
         }
         else if (ctx.cmdRetorne() != null){
-            if (!returnAux)
-                errorlist.addError(5,ctx.start.getLine(),"");
+            if (!retAux)
+                errorListener.addError(5,ctx.start.getLine(),"");
         }
     }
 
-    public ArrayList<Variavel> checkVar(Scope scope, AlgumaParser.VariavelContext ctx) {
-        ArrayList<Variavel> result = new ArrayList<>();
-        Tipo type = checkTipo(ctx.tipo());
+    public ArrayList<Variable> checkVar(Scope scope, AlgumaParser.VariavelContext ctx) {
+        ArrayList<Variable> response = new ArrayList<>();
+        Type type = checkType(ctx.tipo());
 
-        for (AlgumaParser.IdentificadorContext indent : ctx.identificador()){
-            Variavel aux;
-            aux = checkIdent(scope.lookScope(), indent);
+        for (AlgumaParser.IdentificadorContext ident : ctx.identificador()){
+            Variable auxVar;
+            auxVar = checkIndent(scope.lookScope(), ident);
 
-            if (aux.tipo != null)
-                errorlist.addError(1,indent.getStart().getLine(), indent.getText());
+            if (auxVar.type != null)
+                errorListener.addError(1,ident.getStart().getLine(), ident.getText());
             else {
-                aux = new Variavel(aux.varNome, type);
-                if (type.criados != null){
-                    aux = addNovoTipo(scope.lookScope(), aux, type.criados);
+                auxVar = new Variable(auxVar.name, type);
+                if (type.created != null){
+                    auxVar = addNewType(scope.lookScope(), auxVar, type.created);
                 }
-                if (type.aNativo == Tipo.Nativo.REGISTRO){
-                    aux.registro = checkRegistro(scope, ctx.tipo().registro()).registro;
+                if (type.natives == Type.Natives.REGISTRO){
+                    auxVar.register = checkRegister(scope, ctx.tipo().registro()).register;
                 }
-                scope.lookScope().add(aux);
-                result.add(aux);
+                scope.lookScope().add(auxVar);
+                response.add(auxVar);
             }
         }
 
-        if (type.aNativo != null && type.aNativo == Tipo.Nativo.INVALIDO)
-            errorlist.addError(3,ctx.start.getLine(), ctx.tipo().getText());
+        if (type.natives != null && type.natives == Type.Natives.INVALIDO)
+            errorListener.addError(3,ctx.start.getLine(), ctx.tipo().getText());
 
-        return result;
+        return response;
     }
 
-    public Tipo checkTipo(AlgumaParser.TipoContext ctx) {
-        return ((ctx.registro() != null) ? new Tipo(Tipo.Nativo.REGISTRO) : checkEstendido(ctx.tipo_estendido()));
+    public Type checkType(AlgumaParser.TipoContext ctx) {
+        return ((ctx.registro() != null) ? new Type(Type.Natives.REGISTRO) : checkExtended(ctx.tipo_estendido()));
     }
 
-    public Tipo checkEstendido(AlgumaParser.Tipo_estendidoContext ctx) {
-        return ((ctx.getChild(0).getText().contains("^")) ? new Tipo(checkIdentacao(ctx.tipo_basico_ident())): checkIdentacao(ctx.tipo_basico_ident()));
+    public Type checkExtended(AlgumaParser.Tipo_estendidoContext ctx) {
+        return ((ctx.getChild(0).getText().contains("^")) ? new Type(checkIndentType(ctx.tipo_basico_ident())): checkIndentType(ctx.tipo_basico_ident()));
     }
 
-    public Tipo checkLogica(SymbleTable st, AlgumaParser.Parcela_logicaContext ctx) {
+    public Type checkLogicalPortion(SymbolTable st, AlgumaParser.Parcela_logicaContext ctx) {
         if (ctx.exp_relacional() != null)
-            return checkExpRelacional(st, ctx.exp_relacional());
-        return new Tipo(Tipo.Nativo.LOGICO);
+            return checkRelationalExpression(st, ctx.exp_relacional());
+        return new Type(Type.Natives.LOGICO);
     }
 
-    private Tipo.Nativo checkTipoNat(AlgumaParser.Tipo_basicoContext ctx) {
+    private Type.Natives checkNativeType(AlgumaParser.Tipo_basicoContext ctx) {
 
         if(ctx.getText().equals("inteiro"))
-            return Tipo.Nativo.INTEIRO;
+            return Type.Natives.INTEIRO;
         if(ctx.getText().equals("real"))
-            return Tipo.Nativo.REAL;
+            return Type.Natives.REAL;
         if(ctx.getText().equals("literal"))
-            return Tipo.Nativo.LITERAL;
+            return Type.Natives.LITERAL;
         if(ctx.getText().equals("logico"))
-            return Tipo.Nativo.LOGICO;
+            return Type.Natives.LOGICO;
 
-        return Tipo.Nativo.INVALIDO;
+        return Type.Natives.INVALIDO;
     }
 
-    public Tipo checkExpressao(SymbleTable st, AlgumaParser.ExpressaoContext ctx) {
-        Tipo type = checkTermosLogicos(st, ctx.termo_logico(0));
+    public Type checkExpression(SymbolTable st, AlgumaParser.ExpressaoContext ctx) {
+        Type type = checkLogicalTerms(st, ctx.termo_logico(0));
         if (ctx.termo_logico().size() > 1) {
             for (int i = 1; i < ctx.termo_logico().size(); i++) {
-                type = type.validaTipo( checkTermosLogicos(st, ctx.termo_logico(i)));
+                type = type.checkType( checkLogicalTerms(st, ctx.termo_logico(i)));
             }
-            if (type.aNativo != Tipo.Nativo.INVALIDO)
-                type.aNativo = Tipo.Nativo.LOGICO;
+            if (type.natives != Type.Natives.INVALIDO)
+                type.natives = Type.Natives.LOGICO;
         }
         return type;
     }
 
-    public Tipo checkTermosLogicos(SymbleTable st, AlgumaParser.Termo_logicoContext ctx) {
-        Tipo type = checkFatorLogico(st, ctx.fator_logico(0));
+    public Type checkLogicalTerms(SymbolTable st, AlgumaParser.Termo_logicoContext ctx) {
+        Type type = checkLogicalCoefficient(st, ctx.fator_logico(0));
 
-            for (int i = 1; i < ctx.fator_logico().size(); i++)
-                type = type.validaTipo(checkFatorLogico(st, ctx.fator_logico(i)));
+        for (int i = 1; i < ctx.fator_logico().size(); i++)
+            type = type.checkType(checkLogicalCoefficient(st, ctx.fator_logico(i)));
         return type;
     }
 
-    public Tipo checkExpRelacional(SymbleTable st, AlgumaParser.Exp_relacionalContext ctx) {
-        Tipo type = checkExpAritmetica(st, ctx.exp_aritmetica(0));
+    public Type checkRelationalExpression(SymbolTable st, AlgumaParser.Exp_relacionalContext ctx) {
+        Type type = checkArithmeticExpression(st, ctx.exp_aritmetica(0));
 
         if (ctx.exp_aritmetica().size() > 1) {
-            type = type.validaTipo(checkExpAritmetica(st, ctx.exp_aritmetica(1)));
+            type = type.checkType(checkArithmeticExpression(st, ctx.exp_aritmetica(1)));
 
-            if (type.aNativo != Tipo.Nativo.INVALIDO)
-                type.aNativo = Tipo.Nativo.LOGICO;
+            if (type.natives != Type.Natives.INVALIDO)
+                type.natives = Type.Natives.LOGICO;
         }
 
         return type;
     }
 
-    public Tipo checkFatorLogico(SymbleTable st, AlgumaParser.Fator_logicoContext ctx) {
-        Tipo type = checkLogica(st, ctx.parcela_logica());
-            return ((ctx.getChild(0).getText().contains("nao"))? type.validaTipo(new Tipo(Tipo.Nativo.LOGICO)): type);
+    public Type checkLogicalCoefficient(SymbolTable st, AlgumaParser.Fator_logicoContext ctx) {
+        Type type = checkLogicalPortion(st, ctx.parcela_logica());
+        return ((ctx.getChild(0).getText().contains("nao"))? type.checkType(new Type(Type.Natives.LOGICO)): type);
     }
 
 
 
-    public Tipo checkExpAritmetica(SymbleTable st, AlgumaParser.Exp_aritmeticaContext ctx) {
-        Tipo type = checkTermo(st, ctx.termo(0));
+    public Type checkArithmeticExpression(SymbolTable st, AlgumaParser.Exp_aritmeticaContext ctx) {
+        Type type = checkTerm(st, ctx.termo(0));
         for (int i = 1; i < ctx.termo().size(); i++)
-            type = type.validaTipo(checkTermo(st, ctx.termo(i)));
+            type = type.checkType(checkTerm(st, ctx.termo(i)));
 
         return type;
     }
 
-    public Tipo checkTermo(SymbleTable st, AlgumaParser.TermoContext ctx) {
-        Tipo type = checkFator(st, ctx.fator(0));
-            for (int i = 1; i < ctx.fator().size(); i++)
-                type = type.validaTipo(checkFator(st, ctx.fator(i)));
+    public Type checkTerm(SymbolTable st, AlgumaParser.TermoContext ctx) {
+        Type type = checkCoefficient(st, ctx.fator(0));
+        for (int i = 1; i < ctx.fator().size(); i++)
+            type = type.checkType(checkCoefficient(st, ctx.fator(i)));
 
         return type;
     }
 
-    public Tipo checkFator(SymbleTable st, AlgumaParser.FatorContext ctx) {
-        Tipo type = checkParcela(st, ctx.parcela(0));
-            for (int i = 1; i < ctx.parcela().size(); i++)
-                type = type.validaTipo(checkParcela(st, ctx.parcela(i)));
+    public Type checkCoefficient(SymbolTable st, AlgumaParser.FatorContext ctx) {
+        Type type = checkPortion(st, ctx.parcela(0));
+        for (int i = 1; i < ctx.parcela().size(); i++)
+            type = type.checkType(checkPortion(st, ctx.parcela(i)));
 
         return type;
     }
 
-    public Tipo checkParcela(SymbleTable st, AlgumaParser.ParcelaContext ctx) {
+    public Type checkPortion(SymbolTable st, AlgumaParser.ParcelaContext ctx) {
 
         if (ctx.parcela_unario() != null) {
-            Tipo type = checkParcelaSimples(st, ctx.parcela_unario());
+            Type type = checkSimplePortion(st, ctx.parcela_unario());
             if (ctx.op_unario() != null) {
-                if (type.aNativo != Tipo.Nativo.INTEIRO && type.aNativo != Tipo.Nativo.REAL)
-                    return new Tipo(Tipo.Nativo.INVALIDO);
+                if (type.natives != Type.Natives.INTEIRO && type.natives != Type.Natives.REAL)
+                    return new Type(Type.Natives.INVALIDO);
                 return type;
             }
             return type;
         }
-        return checkParcelaUnaria(st, ctx.parcela_nao_unario());
+        return checkSinglePortion(st, ctx.parcela_nao_unario());
     }
 
-    public Variavel checkIdent(SymbleTable st, AlgumaParser.IdentificadorContext ctx) {
+    public Variable checkIndent(SymbolTable st, AlgumaParser.IdentificadorContext ctx) {
         String name = ctx.IDENT(0).getText();
 
-        if (st.include(name)) {
-            Variavel result = st.getVar(name);
+        if (st.contains(name)) {
+            Variable response = st.getVar(name);
             if (ctx.IDENT().size() > 1) {
-                result = result.registro.getVariavel(ctx.IDENT(1).getText());
-                if (result == null)
-                    errorlist.addError(0,ctx.start.getLine(), ctx.getText());
+                response = response.register.getVar(ctx.IDENT(1).getText());
+                if (response == null)
+                    errorListener.addError(0,ctx.start.getLine(), ctx.getText());
             }
-            return result;
+            return response;
         }
 
-        return new Variavel(Converter(ctx,name), null);
+        return new Variable(Suiting(ctx,name), null);
     }
 
-    public Tipo checkMetodo(SymbleTable st, TerminalNode IDENT, List<AlgumaParser.ExpressaoContext> exprs) {
+    public Type checkProcess(SymbolTable st, TerminalNode IDENT, List<AlgumaParser.ExpressaoContext> expression) {
 
-        Tipo result = null;
-        Variavel method = st.getVar(IDENT.getText());
+        Type response = null;
+        Variable process = st.getVar(IDENT.getText());
 
-            for (AlgumaParser.ExpressaoContext exp : exprs) {
-                Tipo tipoExp = checkExpressao(st, exp);
-                if (result == null || result.aNativo != Tipo.Nativo.INVALIDO)
-                    result = tipoExp.verificaEquivalenciaTipo(method.funcao.getTipoRetorno());
-            }
-
-        if (result.aNativo == Tipo.Nativo.INVALIDO){
-            errorlist.addError(4,IDENT.getSymbol().getLine(), IDENT.getText());
-            return new Tipo(Tipo.Nativo.INVALIDO);
+        for (AlgumaParser.ExpressaoContext exp : expression) {
+            Type expType = checkExpression(st, exp);
+            if (response == null || response.natives != Type.Natives.INVALIDO)
+                response = expType.checkEquivalentType(process.function.getResponseType());
         }
 
-        return result;
+        if (response.natives == Type.Natives.INVALIDO){
+            errorListener.addError(4,IDENT.getSymbol().getLine(), IDENT.getText());
+            return new Type(Type.Natives.INVALIDO);
+        }
+
+        return response;
     }
 
-    public Tipo checkParcelaSimples(SymbleTable st, AlgumaParser.Parcela_unarioContext ctx) {
+    public Type checkSimplePortion(SymbolTable st, AlgumaParser.Parcela_unarioContext ctx) {
 
         if (ctx.NUM_INT() != null)
-            return new Tipo(Tipo.Nativo.INTEIRO);
+            return new Type(Type.Natives.INTEIRO);
         if (ctx.NUM_REAL() != null)
-            return new Tipo(Tipo.Nativo.REAL);
+            return new Type(Type.Natives.REAL);
         if (ctx.IDENT() != null)
-            return checkMetodo(st, ctx.IDENT(), ctx.expressao());
+            return checkProcess(st, ctx.IDENT(), ctx.expressao());
 
         if (ctx.identificador() != null) {
-            Variavel indent = checkIdent(st, ctx.identificador());
+            Variable indent = checkIndent(st, ctx.identificador());
 
-            if (indent.tipo == null) {
-                errorlist.addError(0,ctx.identificador().start.getLine(), indent.varNome);
-                return new Tipo(Tipo.Nativo.INVALIDO);
+            if (indent.type == null) {
+                errorListener.addError(0,ctx.identificador().start.getLine(), indent.name);
+                return new Type(Type.Natives.INVALIDO);
             }
 
-            return indent.tipo;
+            return indent.type;
         }
 
 
-        Tipo type = checkExpressao(st, ctx.expressao(0));
-            for (int i = 1; i < ctx.expressao().size(); i++)
-                type = type.validaTipo( checkExpressao(st, ctx.expressao(i)));
+        Type type = checkExpression(st, ctx.expressao(0));
+        for (int i = 1; i < ctx.expressao().size(); i++)
+            type = type.checkType( checkExpression(st, ctx.expressao(i)));
 
         return type;
     }
 
-    public Tipo checkParcelaUnaria(SymbleTable st, AlgumaParser.Parcela_nao_unarioContext ctx) {
+    public Type checkSinglePortion(SymbolTable st, AlgumaParser.Parcela_nao_unarioContext ctx) {
         if (ctx.CADEIA() != null)
-            return new Tipo(Tipo.Nativo.LITERAL);
+            return new Type(Type.Natives.LITERAL);
         else {
             if (ctx.getChild(0).getText().contains("&"))
-                return new Tipo(Tipo.Nativo.ENDERECO);
+                return new Type(Type.Natives.ENDERECO);
 
-            Variavel indent = checkIdent(st, ctx.identificador());
-            if (indent.tipo == null) {
-                errorlist.addError(0,ctx.identificador().start.getLine(), indent.varNome);
-                return new Tipo(Tipo.Nativo.INVALIDO);
+            Variable indent = checkIndent(st, ctx.identificador());
+            if (indent.type == null) {
+                errorListener.addError(0,ctx.identificador().start.getLine(), indent.name);
+                return new Type(Type.Natives.INVALIDO);
             }
-            return indent.tipo;
+            return indent.type;
         }
     }
 
 
 
-   public Variavel addNovoTipo(SymbleTable st, Variavel aux, String name) {
-        if (st.include(name)) {
-            Variavel model = st.getVar(name);
-            if (model.tipo.aNativo == Tipo.Nativo.REGISTRO) {
-                Variavel result = new Variavel(aux.varNome, new Tipo(Tipo.Nativo.REGISTRO));
-                result.setRegistro(model.registro);
-                result.tipo = aux.tipo;
-                return result;
+    public Variable addNewType(SymbolTable st, Variable auxVar, String name) {
+        if (st.contains(name)) {
+            Variable template = st.getVar(name);
+            if (template.type.natives == Type.Natives.REGISTRO) {
+                Variable response = new Variable(auxVar.name, new Type(Type.Natives.REGISTRO));
+                response.setRegister(template.register);
+                response.type = auxVar.type;
+                return response;
             }
         }
-        return new Variavel(null, null);
+        return new Variable(null, null);
     }
 
-    public String Converter(AlgumaParser.IdentificadorContext base, String name){
+    public String Suiting(AlgumaParser.IdentificadorContext base, String name){
         for (int i = 1; i < base.IDENT().size(); i++)
             name += "." + base.IDENT(i);
-    return name;
+        return name;
 
     }
 }
