@@ -104,21 +104,20 @@ mvn package
 ```
 This is possible because the file 'pom.xml' is configured to compile the project.
 
-The `alguma-lexico-1.0-SNAPSHOT.jar` file will be created in the `/home/$USER/t3-4-5-compiladores/target` directory.
+The `alguma-sintatico-1.0-SNAPSHOT.jar` file will be created in the `/home/$USER/t3-4-5-compiladores/target` directory.
 
 4. **Running Tests**
 
 Execute the following command to run the tests:
 ```
-java -jar /home/$USER/corretor/compiladores-corretor-automatico-1.0-SNAPSHOT-jar-with-dependencies.jar " java -jar /home/$USER/t3-4-5-compiladores/target/alguma-lexico-1.0-SNAPSHOT-jar-with-dependencies.jar" gcc home/corretor/temp /home/$USER/corretor/casos-de-teste/casos-de-teste  "Student 1 number, Student 2 number, Student 3 number" t1 t2 t3 t4 t5
+java -jar /home/$USER/corretor/compiladores-corretor-automatico-1.0-SNAPSHOT-jar-with-dependencies.jar " java -jar /home/$USER/t3-4-5-compiladores/target/alguma-sintatico-1.0-SNAPSHOT-jar-with-dependencies.jar" gcc home/corretor/temp /home/$USER/corretor/casos-de-teste/casos-de-teste  "740871, 800310" t3 
 ```
 
-Replace `"Student 1 number, Student 2 number, Student 3 number"` with the actual student numbers.
+Replace "t3" for "t4" or "t5" to obtain the other grades.
 
 This guide should help you set up your development environment and get started with the project.
 
 This README.md provides a comprehensive guide for setting up the development environment, including checking and installing Java and GCC, setting up the project, compiling the source code, and running tests.
-Replace `"Student 1 number, Student 2 number, Student 3 number"` with the actual student numbers.
 
 This guide should help you set up your development environment and get started with the project.
 
